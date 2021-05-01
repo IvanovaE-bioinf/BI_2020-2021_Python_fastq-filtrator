@@ -105,7 +105,7 @@ def genere_files(out_passed, out_failed, keep_filtered):
 
 
 # read lines
-def line_reader():
+def line_reader(four_lines_iterator):
     try:
         four_lines = next(four_lines_iterator)
         return four_lines
@@ -113,7 +113,7 @@ def line_reader():
         return None
 
 
-def four_lines_read():
+def four_lines_read(file):
     with open(file, 'r') as f:
         res = []
         for line in f:
@@ -124,7 +124,8 @@ def four_lines_read():
 
 
 # filtration
-def filter_(four_lines_):
+
+def filter_(four_lines_, keep_filtered, out_failed):
     if keep_filtered == 1:
         with open(out_failed, 'a+') as f:
             for index_ in four_lines_:
@@ -140,17 +141,15 @@ def count_gc(sequence):
         return None
 
 
-def write_file(four_lines):
+def write_file(out_passed, four_lines):
     with open(out_passed, 'a+') as f:
         for index in four_lines:
             f.write(index)
 
 
-def filter_gc_content(four_lines):
+def filter_gc_content(four_lines, gc_bounds_low, gc_bounds_high):
     gc_content = count_gc(four_lines[1][:-1])
-    print(gc_content)
     if gc_content < gc_bounds_low or gc_content > gc_bounds_high:
-        filter_(four_lines)
         return 0
     return 1
 
@@ -164,9 +163,9 @@ if __name__ == '__main__':
     output_base_name = parse_output_base_name(list_arg)
     out_failed, out_passed = genere_output_names(output_base_name)
     genere_files(out_passed, out_failed, keep_filtered)
-    four_lines_iterator = four_lines_read()
+    four_lines_iterator = four_lines_read(file)
     while True:
-        four_lines = line_reader()
+        four_lines = line_reader(four_lines_iterator)
         print(four_lines)
         if four_lines is None:
             break
@@ -175,10 +174,11 @@ if __name__ == '__main__':
                 filter_(four_lines)
             continue
         if gc_bounds_low is not None:
-            if filter_gc_content(four_lines) == 1:
+            if filter_gc_content(four_lines, gc_bounds_low, gc_bounds_high) == 1:
                 write_file(four_lines)
             continue
         else:
-            write_file(four_lines)
+            filter_(four_lines, keep_filtered, out_failed)
+            write_file(out_passed, four_lines)
             continue
     print('Process completed successfully')
